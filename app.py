@@ -4,25 +4,32 @@ import pandas as pd
 
 st.set_page_config(page_title="Модель раннего прогноза ГСД", page_icon="🧪", layout="centered")
 
-# ---------- Стили ----------
+# ---------- Стили (спокойная медицинская палитра) ----------
 st.markdown("""
 <style>
 :root{
-  --primary:#7B1FA2;      /* фиолетовый акцент */
-  --ok:#1b5e20;           /* зелёный текст */
-  --okbg:#e8f5e9;         /* зелёный фон */
-  --warn:#611a15;         /* красный текст */
-  --warnbg:#fdecea;       /* красный фон */
+  --primary:#0ea5a2;           /* бирюзовый акцент */
+  --ok:#1b5e20;                /* зелёный текст */
+  --okbg:#e8f5e9;              /* зелёный фон */
+  --warn:#b71c1c;              /* красный текст */
+  --warnbg:#ffebee;            /* красный фон */
+  --card:#ffffff;              /* фон карточек */
+  --border:#e9eef2;            /* светлая рамка */
 }
 .block-container{padding-top:2rem;padding-bottom:2rem;}
-h3{font-weight:800;letter-spacing:.2px;margin-bottom:.6rem;}
-/* карточки */
-.card{background:#fff;border:1px solid #eee;border-radius:14px;padding:16px 18px;
-      box-shadow:0 2px 8px rgba(0,0,0,.05);}
+h3{font-weight:800;letter-spacing:.2px;margin-bottom:.8rem;}
+/* карточка ввода */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px 18px;
+  box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
 /* кнопка */
 div.stButton > button{
-  background:linear-gradient(90deg,var(--primary),#9C27B0);
-  color:#fff;border:0;border-radius:10px;padding:.6rem 1rem;font-weight:600;
+  background:linear-gradient(90deg,var(--primary),#14b8a6);
+  color:#fff;border:0;border-radius:10px;padding:.65rem 1.05rem;font-weight:600;
 }
 div.stButton > button:hover{filter:brightness(1.05);}
 /* индикаторы */
@@ -30,10 +37,7 @@ div.stButton > button:hover{filter:brightness(1.05);}
            text-align:center;font-size:20px;font-weight:800;}
 .risk-low{background:var(--okbg);color:var(--ok);padding:14px;border-radius:12px;
           text-align:center;font-size:20px;font-weight:800;}
-/* чипы-легенда */
-.badge{border-radius:999px;padding:.35rem .75rem;font-weight:600;font-size:.85rem;display:inline-block;}
-.legend{display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;}
-.hr{height:1px;background:#eee;margin:1.25rem 0;}
+.hr{height:1px;background:#edf2f7;margin:1.25rem 0;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -58,7 +62,7 @@ MEAN_LOG, SD_LOG = {}, {}
 for k, arr in TRAIN_RAW.items():
     x = np.array(arr, dtype=float); xlog = np.log10(x)
     MEAN_LOG[k] = float(np.mean(xlog))
-    SD_LOG[k]  = float(np.std(xlog, ddof=1))
+    SD_LOG[k]  = float(np.std(xlog, ddof=1))  # sample SD
 
 def normalize_raw_df(df_raw: pd.DataFrame) -> pd.DataFrame:
     z = pd.DataFrame(index=df_raw.index)
@@ -81,18 +85,14 @@ def parse_num(s):
     try: return float(str(s).replace(",", "."))
     except: return None
 
-# ---------- Заголовок ----------
+# ---------- Заголовок (строго в 3 строки) ----------
 st.markdown(
-    "<h3 style='text-align:center'>Модель раннего прогноза (первый триместр беременности) гестационного сахарного диабета</h3>",
+    "<h3 style='text-align:center'>"
+    "Модель раннего прогноза<br/>"
+    "(первый триместр беременности)<br/>"
+    "гестационного сахарного диабета"
+    "</h3>",
     unsafe_allow_html=True
-)
-
-# ---------- Легенда ----------
-st.markdown(
-    "<div class='legend'>"
-    "<span class='badge' style='background:#e8f5e9;color:#1b5e20'>Низкий риск</span>"
-    "<span class='badge' style='background:#fdecea;color:#611a15'>Высокий риск</span>"
-    "</div>", unsafe_allow_html=True
 )
 
 # ---------- Карточка ввода ----------
@@ -105,7 +105,6 @@ with col1:
 with col2:
     mh3_str      = st.text_input("3‑метилгистидин (MH3)", value="")
     ps_str       = st.text_input("Фосфосерин", value="")
-
 calc = st.button("Рассчитать риск")
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -142,5 +141,5 @@ with st.expander("Дисклеймер"):
 - Исследовательский прототип. Не является медицинским изделием.
 - Модель: регуляризованная логистическая регрессия (LASSO), обучена на пилотной выборке n=10 (5 случаев ГСД, 5 контролей).
 - Ввод: сырые концентрации в моче (ммоль/моль креатинина). Внутри автоматически применяется предобработка, идентичная обучению (log10 → Pareto).
-- Порог решения фиксирован (индекс Юдена по LOO‑валидации).
+- Порог решения фиксирован (индекс Юдена по LOO‑валидации). Требуется внешняя валидация на независимых данных.
     """)
