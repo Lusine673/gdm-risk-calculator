@@ -8,18 +8,17 @@ st.set_page_config(page_title="Модель раннего прогноза ГС
 st.markdown("""
 <style>
 :root{
-  --primary:#0ea5a2;           /* бирюзовый акцент */
-  --ok:#1b5e20;                /* зелёный текст */
-  --okbg:#e8f5e9;              /* зелёный фон */
-  --warn:#b71c1c;              /* красный текст */
-  --warnbg:#ffebee;            /* красный фон */
-  --card:#ffffff;              /* фон карточек */
-  --border:#e9eef2;            /* светлая рамка */
+  --primary:#0ea5a2;           
+  --ok:#1b5e20;                
+  --okbg:#e8f5e9;              
+  --warn:#b71c1c;              
+  --warnbg:#ffebee;            
+  --card:#ffffff;              
+  --border:#e9eef2;            
 }
 .block-container{padding-top:2rem;padding-bottom:2rem;}
 h3{font-weight:800;letter-spacing:.2px;margin-bottom:.8rem;}
 
-/* карточка ввода */
 .card{
   background:var(--card);
   border:1px solid var(--border);
@@ -28,14 +27,12 @@ h3{font-weight:800;letter-spacing:.2px;margin-bottom:.8rem;}
   box-shadow:0 2px 10px rgba(0,0,0,.04);
 }
 
-/* кнопка */
 div.stButton > button{
   background:linear-gradient(90deg,var(--primary),#14b8a6);
   color:#fff;border:0;border-radius:10px;padding:.65rem 1.05rem;font-weight:600;
 }
 div.stButton > button:hover{filter:brightness(1.05);}
 
-/* индикаторы */
 .risk-high{
   background:var(--warnbg);
   color:var(--warn);
@@ -50,7 +47,6 @@ div.stButton > button:hover{filter:brightness(1.05);}
 }
 .hr{height:1px;background:#edf2f7;margin:1.25rem 0;}
 
-/* скрытие лишних элементов Streamlit */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
@@ -58,22 +54,28 @@ header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
+
 # ---------- Модель ----------
 BETA0 = 0.0
 COEFFS = {
-    "Tyrosine": 0.1279647860222218,
-    "MH3": 0.8913890705856571,             # 3-метилгистидин
-    "Phosphoethanolamine": -0.8390359958954429,
-    "Phosphoserine": -1.1553144548078098
+    "Tyrosine": 2.33,
+    "AlphaAminoadipicAcid": 0.96,
+    "MH3": 1.13,                           
+    "Phosphoethanolamine": -2.89,
+    "Phosphoserine": -2.48
 }
-THRESH = 0.382
+THRESH = 0.1   # Порог решения (чувствительность 100%, специфичность 80%)
 FEATURES = list(COEFFS.keys())
 
-# Словарь тренировочных данных
+# ---------- Тренировочные данные (примерные, для нормализации)
 TRAIN_RAW = {
     "Tyrosine": [
         45.31, 23.43, 15.03, 20.80, 19.32,
         9.58, 12.33, 10.53, 10.17, 14.52
+    ],
+    "AlphaAminoadipicAcid": [
+        0.95, 1.12, 1.02, 1.08, 1.00,
+        2.40, 2.20, 2.50, 2.10, 2.35
     ],
     "MH3": [
         46.08, 35.35, 39.78, 15.54, 36.53,
@@ -89,7 +91,7 @@ TRAIN_RAW = {
     ]
 }
 
-# Предобработка (логарифм и стандартизация)
+# ---------- Предобработка (log10 + Pareto)
 MEAN_LOG, SD_LOG = {}, {}
 for k, arr in TRAIN_RAW.items():
     x = np.array(arr, dtype=float)
@@ -120,6 +122,7 @@ def parse_num(s):
     except:
         return None
 
+
 # ---------- Заголовок ----------
 st.markdown(
     "<h3 style='text-align:center'>"
@@ -130,6 +133,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
 # ---------- Карточка ввода ----------
 st.markdown("<div class='card'>", unsafe_allow_html=True)
 st.markdown("Введите значения (ммоль/моль креатинина):")
@@ -137,6 +141,7 @@ st.markdown("Введите значения (ммоль/моль креатин
 col1, col2 = st.columns(2)
 with col1:
     tyrosine_str = st.text_input("Тирозин", value="")
+    alphaaaa_str = st.text_input("α-Аминоадипиновая кислота", value="")
     pe_str       = st.text_input("Фосфоэтаноламин", value="")
 with col2:
     mh3_str      = st.text_input("3‑Метилгистидин (MH3)", value="")
@@ -146,15 +151,18 @@ calc = st.button("Рассчитать риск")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
+
 # ---------- Расчёт и вывод ----------
 if calc:
     tyrosine = parse_num(tyrosine_str)
+    alphaaaa = parse_num(alphaaaa_str)
     mh3      = parse_num(mh3_str)
     pe       = parse_num(pe_str)
     ps       = parse_num(ps_str)
 
     errors = []
     for name, val in [("Тирозин", tyrosine),
+                      ("α-Аминоадипиновая кислота", alphaaaa),
                       ("3‑метилгистидин (MH3)", mh3),
                       ("Фосфоэтаноламин", pe),
                       ("Фосфосерин", ps)]:
@@ -168,6 +176,7 @@ if calc:
     else:
         df_raw  = pd.DataFrame([{
             "Tyrosine": tyrosine,
+            "AlphaAminoadipicAcid": alphaaaa,
             "MH3": mh3,
             "Phosphoethanolamine": pe,
             "Phosphoserine": ps
@@ -177,17 +186,19 @@ if calc:
         high    = p >= THRESH
 
         if high:
-            st.markdown("<div class='risk-high'>Высокий риск</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='risk-high'>Высокий риск (p={p:.2f})</div>", unsafe_allow_html=True)
         else:
-            st.markdown("<div class='risk-low'>Низкий риск</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='risk-low'>Низкий риск (p={p:.2f})</div>", unsafe_allow_html=True)
 
 st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
+
 
 # ---------- Дисклеймер ----------
 with st.expander("Дисклеймер"):
     st.markdown("""
 - Исследовательский прототип. Не является медицинским изделием.
-- Модель: регуляризованная логистическая регрессия (LASSO), обучена на пилотной выборке n=10 (5 случаев ГСД, 5 контролей).
-- Ввод значений в единицах измерения: ммоль/моль креатинина. Внутри автоматически применяется предобработка, идентичная обучению (log10 → Pareto).
-- Порог решения фиксирован (индекс Юдена по LOO‑валидации). Требуется внешняя валидация на независимых данных.
+- Модель: LASSO‑логистическая регрессия (C=10), обучена на пилотной выборке n=10 (5 случаев ГСД, 5 контролей).
+- Ввод значений в единицах измерения: ммоль/моль креатинина. Внутри автоматически применяется предобработка (log10 → Pareto).
+- Порог классификации установлен как чувствительный (p=0,1): чувствительность 100%, специфичность 80%.
+- Требуется внешняя валидация на независимых данных.
     """)
