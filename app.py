@@ -64,10 +64,10 @@ COEFFS = {
     "Phosphoethanolamine": -2.89,
     "Phosphoserine": -2.48
 }
-THRESH = 0.1   # Порог решения (чувствительность 100%, специфичность 80%)
+THRESH = 0.1   # Порог (чувствительность 100%, специфичность 80%)
 FEATURES = list(COEFFS.keys())
 
-# ---------- Тренировочные данные (примерные, для нормализации)
+# ---------- Тренировочные данные (пример, для нормализации)
 TRAIN_RAW = {
     "Tyrosine": [
         45.31, 23.43, 15.03, 20.80, 19.32,
@@ -91,7 +91,7 @@ TRAIN_RAW = {
     ]
 }
 
-# ---------- Предобработка (log10 + Pareto)
+# ---------- Предобработка (Log10 + Pareto)
 MEAN_LOG, SD_LOG = {}, {}
 for k, arr in TRAIN_RAW.items():
     x = np.array(arr, dtype=float)
@@ -134,21 +134,20 @@ st.markdown(
 )
 
 
-# ---------- Карточка ввода ----------
+# ---------- Форма ввода ----------
 st.markdown("<div class='card'>", unsafe_allow_html=True)
 st.markdown("Введите значения (ммоль/моль креатинина):")
 
 col1, col2 = st.columns(2)
 with col1:
-    tyrosine_str = st.text_input("Тирозин", value="")
-    alphaaaa_str = st.text_input("α-Аминоадипиновая кислота", value="")
-    pe_str       = st.text_input("Фосфоэтаноламин", value="")
+    tyrosine_str  = st.text_input("Тирозин", value="")
+    alphaaaa_str  = st.text_input("α-Аминоадипиновая кислота", value="")
+    pe_str        = st.text_input("Фосфоэтаноламин", value="")
 with col2:
-    mh3_str      = st.text_input("3‑Метилгистидин (MH3)", value="")
-    ps_str       = st.text_input("Фосфосерин", value="")
+    mh3_str       = st.text_input("3‑Метилгистидин (MH3)", value="")
+    ps_str        = st.text_input("Фосфосерин", value="")
 
 calc = st.button("Рассчитать риск")
-
 st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -170,11 +169,12 @@ if calc:
             errors.append(f"{name}: введите число (допускается запятая или точка).")
         elif val <= 0:
             errors.append(f"{name}: значение должно быть > 0.")
+
     if errors:
         for e in errors:
             st.error(e)
     else:
-        df_raw  = pd.DataFrame([{
+        df_raw = pd.DataFrame([{
             "Tyrosine": tyrosine,
             "AlphaAminoadipicAcid": alphaaaa,
             "MH3": mh3,
@@ -182,14 +182,18 @@ if calc:
             "Phosphoserine": ps
         }])
         df_norm = normalize_raw_df(df_raw)
-        p       = float(predict_proba_from_norm(df_norm)[0])
-        high    = p >= THRESH
-
+        p = float(predict_proba_from_norm(df_norm)[0])
         p_percent = p * 100
-if high:
-    st.markdown(f"<div class='risk-high'>Высокий риск ({p_percent:.1f}%)</div>", unsafe_allow_html=True)
-else:
-    st.markdown(f"<div class='risk-low'>Низкий риск ({p_percent:.1f}%)</div>", unsafe_allow_html=True)
+        high = p >= THRESH
+
+        if high:
+            st.markdown(f"<div class='risk-high'>Высокий риск ({p_percent:.1f}%)</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div class='risk-low'>Низкий риск ({p_percent:.1f}%)</div>", unsafe_allow_html=True)
+
+
+st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
+
 
 # ---------- Дисклеймер ----------
 with st.expander("Дисклеймер"):
