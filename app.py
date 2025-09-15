@@ -187,9 +187,9 @@ if calc:
 
         p_percent = p * 100
 if high:
-    st.markdown(f"<div class='risk-high'>Высокий риск (p={p_percent:.1f}%)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='risk-high'>Высокий риск ({p_percent:.1f}%)</div>", unsafe_allow_html=True)
 else:
-    st.markdown(f"<div class='risk-low'>Низкий риск (p={p_percent:.1f}%)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='risk-low'>Низкий риск ({p_percent:.1f}%)</div>", unsafe_allow_html=True)
 
 # ---------- Дисклеймер ----------
 with st.expander("Дисклеймер"):
