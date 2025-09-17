@@ -196,7 +196,7 @@ with tab1:
         elif cat_base == "Низкий":
             st.markdown(f"<div class='risk-low'>Низкий базовый риск ({p_base*100:.1f}%)</div>", unsafe_allow_html=True)
         else:
-            st.info(f"Промежуточный базовый риск ({p_base*100:.1f}%). Рекомендуйте метаболомный шаг для уточнения.")
+            st.info(f"Промежуточный базовый риск ({p_base*100:.1f}%). Рекомендуется исследование мочи на метаболомный профиль аминокислот для уточнения риска.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
