@@ -110,7 +110,6 @@ def meta_predict(df_norm):
     return logistic(np.dot(X, beta))
 
 # --- Заголовки ---
-st.markdown("<h3>Модель раннего прогноза<br/>(первый триместр беременности)<br/>гестационного сахарного диабета</h3>", unsafe_allow_html=True)
 st.markdown("<h3>Комплексная модель прогнозирования осложнений<br/>при наличии гестационного сахарного диабета</h3>", unsafe_allow_html=True)
 
 # --- ВКЛАДКИ ---
