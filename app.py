@@ -110,7 +110,7 @@ def meta_predict(df_norm):
     return logistic(np.dot(X, beta))
 
 # --- Заголовки ---
-st.markdown("<h3>Комплексная модель прогнозирования акушерских и перинатальных осложнений<br/>при гестационном сахарноом диабете</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Комплексная модель прогнозирования<br/>акушерских и перинатальных осложнений при ГСД</h3>", unsafe_allow_html=True)
 
 # --- ВКЛАДКИ ---
 tab1, tab2, tab3, tab4 = st.tabs([
